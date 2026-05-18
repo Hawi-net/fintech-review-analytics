@@ -1,29 +1,29 @@
 import pandas as pd
-import re
 
-def clean_text(text):
-    text = text.lower()
-    text = re.sub(r'http\S+', '', text)   # remove URLs
-    text = re.sub(r'[^a-z\s]', '', text)  # remove special chars
-    text = re.sub(r'\s+', ' ', text).strip()
-    return text
+def preprocess():
+    df = pd.read_csv("data/raw_reviews.csv")
 
+    print(f"Original size: {len(df)}")
 
-def preprocess_data(input_path="data/raw_reviews.csv"):
-    df = pd.read_csv(input_path)
+    # ✅ Remove duplicates using review_id
+    df = df.drop_duplicates(subset=["review_id"])
 
-    df.dropna(subset=["review"], inplace=True)
+    # ✅ Handle missing values
+    before = len(df)
+    df = df.dropna(subset=["review", "rating"])
+    after = len(df)
 
-    df["clean_review"] = df["review"].apply(clean_text)
+    print(f"Removed {before - after} rows with missing values")
 
-    df["date"] = pd.to_datetime(df["date"])
+    # ✅ Normalize date
+    df["date"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d")
+
+    # ✅ Keep only required columns
+    df = df[["review", "rating", "date", "bank", "source"]]
+
+    print(f"Final dataset size: {len(df)}")
 
     df.to_csv("data/clean_reviews.csv", index=False)
 
-    print("Clean dataset saved to data/clean_reviews.csv")
-
-    return df
-
-
 if __name__ == "__main__":
-    preprocess_data()
+    preprocess()
